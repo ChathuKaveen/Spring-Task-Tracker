@@ -10,9 +10,12 @@ import com.task_management.Task.Management.mappers.TaskMapper;
 import com.task_management.Task.Management.repositories.TaskRepository;
 import com.task_management.Task.Management.repositories.UserRepository;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -24,6 +27,7 @@ public class TaskService {
     private final UserRepository userRepository;
     private final TaskRepository taskRepository;
     private final TaskMapper taskMapper;
+
     public TaskDto createTask(RegisterTaskRequest request){
         Task task = new Task();
         var authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -43,5 +47,17 @@ public class TaskService {
         var saved = taskRepository.save(task);
 
         return taskMapper.toDto(saved);
+    }
+
+    public Page<Task> getAllTasks(
+            int page,
+            int size,
+            String sort,
+            TaskStatus status,
+            LocalDate DueDate
+    ){
+        PageRequest pageRequest = PageRequest.of(page , size);
+        Page<Task> taskList = taskRepository.findWithFilters(status , DueDate , pageRequest);
+        return taskList;
     }
 }
