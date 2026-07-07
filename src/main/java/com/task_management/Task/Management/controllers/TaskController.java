@@ -29,15 +29,16 @@ public class TaskController {
         return ResponseEntity.created(uri).body(response);
     }
 
-    @GetMapping
+    @GetMapping("/all-tasks")
     public ResponseEntity<?> getAllTasks(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdDate,desc") String sort,
             @RequestParam(required = false) TaskStatus status,
-            @RequestParam(required = false) LocalDate DueDate
+            @RequestParam(required = false) LocalDate DueDate,
+            @RequestParam(required = false) Long userId
     ){
-        var leavesPage = taskService.getAllTasks(page , size , sort , status ,DueDate);
+        var leavesPage = taskService.getAllTasks(page , size , sort , status ,DueDate , userId);
         var data = leavesPage.stream().map(taskMapper::toDto).toList();
         var response = new TaskPageResponse<>(
                 data,
@@ -47,6 +48,11 @@ public class TaskController {
                 leavesPage.getTotalElements()
         );
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping
+    public Iterable<TaskDto> getMyTasks(){
+        return taskService.getMyTasks();
     }
 
     @GetMapping("/{id}")

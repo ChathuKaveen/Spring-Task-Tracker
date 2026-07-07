@@ -56,11 +56,18 @@ public class TaskService {
             int size,
             String sort,
             TaskStatus status,
-            LocalDate DueDate
+            LocalDate DueDate,
+            Long userId
     ){
         PageRequest pageRequest = PageRequest.of(page , size);
-        Page<Task> taskList = taskRepository.findWithFilters(status , DueDate , pageRequest);
+        Page<Task> taskList = taskRepository.findWithFilters(status , DueDate , pageRequest , userId);
         return taskList;
+    }
+
+    public Iterable<TaskDto> getMyTasks(){
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        var userId =(Long) authentication.getPrincipal();
+        return taskRepository.findByOwnerId(userId).stream().map(taskMapper::toDto).toList();
     }
 
     public TaskDto getTaskById(Long id){
