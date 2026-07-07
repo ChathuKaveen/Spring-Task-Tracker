@@ -8,6 +8,7 @@ import com.task_management.Task.Management.exceptions.UserNotFound;
 import com.task_management.Task.Management.mappers.UserMapper;
 import com.task_management.Task.Management.repositories.UserRepository;
 import lombok.AllArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -16,14 +17,14 @@ public class UserService {
 
     private final UserMapper userMapper;
     private final UserRepository userRepository;
-    //private final PasswordEncoder passwordEncoder;
+    private final PasswordEncoder passwordEncoder;
 
     public UserDto createUser(RegisterUserRequest request){
         var obj = userMapper.toEntity(request);
         if(userRepository.existsByEmail(request.getEmail())){
             throw new UserAlreadyExisist("User Already Exist");
         }
-        obj.setPassword(request.getPassword());
+        obj.setPassword(passwordEncoder.encode(request.getPassword()));
         userRepository.save(obj);
         return userMapper.toDto(obj);
     }
