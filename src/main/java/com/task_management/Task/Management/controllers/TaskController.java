@@ -80,9 +80,7 @@ public class TaskController {
 
     @PutMapping("/{id}")
     public ResponseEntity<?> updateTask(@RequestBody UpdateTaskRequest request , @PathVariable(name = "id") Long id){
-        var authentication = SecurityContextHolder.getContext().getAuthentication();
-        var userId =(Long) authentication.getPrincipal();
-        return ResponseEntity.ok(taskService.updateTask(request , id , userId));
+        return ResponseEntity.ok(taskService.updateTask(request , id));
     }
 
     @DeleteMapping("/{id}")

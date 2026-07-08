@@ -11,6 +11,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -53,10 +54,19 @@ public class SecurityConfig {
                 )
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(c -> c
-                        .requestMatchers(HttpMethod.POST , "/user/**").permitAll()
-                        .requestMatchers(HttpMethod.POST , "/auth/login").permitAll()
-                        .requestMatchers(HttpMethod.POST , "/auth/refresh").permitAll()
-                        .requestMatchers(HttpMethod.GET , "/admin/**").hasRole(Role.ADMIN.name())
+                        // Auth & Registration public routes
+                        .requestMatchers(HttpMethod.POST, "/user").permitAll() // Registration
+                        .requestMatchers(HttpMethod.POST, "/auth/login", "/auth/refresh").permitAll()
+
+                        // Admin-only Task operations
+                        .requestMatchers(HttpMethod.GET, "/task/all-tasks").hasRole(Role.ADMIN.name())
+
+                        // User management locks
+                        .requestMatchers(HttpMethod.GET, "/user/**").hasRole(Role.ADMIN.name())
+                        .requestMatchers(HttpMethod.DELETE, "/user/**").hasRole(Role.ADMIN.name())
+
+                        // Every other endpoint (including /task GET, PUT, DELETE) just requires login
+                        // Ownership checks are handled at the service/method layer
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter , UsernamePasswordAuthenticationFilter.class)

@@ -16,13 +16,10 @@ import com.task_management.Task.Management.repositories.UserRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.RequestParam;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 @Service
 @AllArgsConstructor
@@ -88,7 +85,7 @@ public class TaskService {
         return taskMapper.toDto(task);
     }
 
-    public TaskDto updateTask(UpdateTaskRequest request , Long id , Long userId){
+    public TaskDto updateTask(UpdateTaskRequest request , Long id){
         var task = taskRepository.findById(id).orElse(null);
         if(task == null){
             throw new TaskNotFoundException("Task Not Found");
