@@ -20,7 +20,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("v1/api/auth")
+@CrossOrigin(origins = "http://localhost:5174")
 @AllArgsConstructor
 public class AuthController {
     private final AuthenticationManager authenticationManager;
@@ -39,6 +40,7 @@ public class AuthController {
 
         var userObj = userRepository.findByEmail(request.getEmail()).orElseThrow();
         var token = jwtService.generateAccessToken(userObj);
+        var role = jwtService.getRoleFromToken(token);
         var refreshToken = jwtService.generateRefreshToken(userObj);
 
         var cookie = new Cookie("refreshToken" , refreshToken);
@@ -47,7 +49,7 @@ public class AuthController {
         cookie.setMaxAge(jwtConfig.getRefreshTokenExpiration());
         cookie.setSecure(true);
         response.addCookie(cookie);
-        return ResponseEntity.ok(new JwtResponse(token));
+        return ResponseEntity.ok(new JwtResponse(role , request.getEmail(), token));
     }
 
     @ExceptionHandler(BadCredentialsException.class)
@@ -70,7 +72,9 @@ public class AuthController {
         var userId = jwtService.getUserIdFromToken(refreshToken);
         var user = userRepository.findById(userId).orElseThrow();
         var accessToken = jwtService.generateAccessToken(user);
-        return ResponseEntity.ok(new JwtResponse(accessToken));
+        var role = jwtService.getRoleFromToken(accessToken);
+        var email = jwtService.getEmailFromToken(accessToken);
+        return ResponseEntity.ok(new JwtResponse(role ,email, accessToken));
 
     }
 

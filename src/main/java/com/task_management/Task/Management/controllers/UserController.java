@@ -12,7 +12,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 
 @RestController
-@RequestMapping("/user")
+@RequestMapping("v1/api/user")
+@CrossOrigin(origins = "http://localhost:5174")
 @AllArgsConstructor
 public class UserController {
     private final UserService userService;

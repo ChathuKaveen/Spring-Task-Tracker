@@ -11,6 +11,6 @@ public class TaskEventPublisher {
     private final SimpMessagingTemplate simpMessagingTemplate;
 
     public void send(TaskUpdateEventDto event){
-        simpMessagingTemplate.convertAndSend("/topic/tasks" , event);
+        simpMessagingTemplate.convertAndSend("/topic/task" , event);
     }
 }

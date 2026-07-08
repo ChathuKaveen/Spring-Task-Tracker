@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -49,22 +50,24 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http){
         http.
-                sessionManagement(c ->
+                cors(Customizer.withDefaults())
+                .sessionManagement(c ->
                         c.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(c -> c
                         // Auth & Registration public routes
-                        .requestMatchers(HttpMethod.POST, "/user").permitAll() // Registration
-                        .requestMatchers(HttpMethod.POST, "/auth/login", "/auth/refresh").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/v1/api/user").permitAll() // Registration
+                        .requestMatchers(HttpMethod.POST, "/v1/api/auth/login", "/v1/api/auth/refresh").permitAll()
 
                         // Admin-only Task operations
-                        .requestMatchers(HttpMethod.GET, "/task/all-tasks").hasRole(Role.ADMIN.name())
+                        .requestMatchers(HttpMethod.GET, "/v1/api/task/all-tasks").hasRole(Role.ADMIN.name())
 
                         // User management locks
-                        .requestMatchers(HttpMethod.GET, "/user/**").hasRole(Role.ADMIN.name())
-                        .requestMatchers(HttpMethod.DELETE, "/user/**").hasRole(Role.ADMIN.name())
-
+                        .requestMatchers(HttpMethod.GET, "/v1/api/user/**").hasRole(Role.ADMIN.name())
+                        .requestMatchers(HttpMethod.DELETE, "/v1/api/user/**").hasRole(Role.ADMIN.name())
+                        .requestMatchers("/v1/api/ws-task-tracker/**").permitAll()
+                        .requestMatchers("/ws-task-tracker/**").permitAll()
                         // Every other endpoint (including /task GET, PUT, DELETE) just requires login
                         // Ownership checks are handled at the service/method layer
                         .anyRequest().authenticated()

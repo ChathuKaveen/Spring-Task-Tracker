@@ -17,7 +17,8 @@ import org.springframework.web.util.UriComponentsBuilder;
 import java.time.LocalDate;
 
 @RestController
-@RequestMapping("/task")
+@RequestMapping("v1/api/task")
+@CrossOrigin(origins = "http://localhost:5174")
 @AllArgsConstructor
 public class TaskController {
 
