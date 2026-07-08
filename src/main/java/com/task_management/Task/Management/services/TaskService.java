@@ -2,6 +2,7 @@ package com.task_management.Task.Management.services;
 
 import com.task_management.Task.Management.dtos.RegisterTaskRequest;
 import com.task_management.Task.Management.dtos.TaskDto;
+import com.task_management.Task.Management.dtos.TaskUpdateEventDto;
 import com.task_management.Task.Management.dtos.UpdateTaskRequest;
 import com.task_management.Task.Management.entities.Task;
 import com.task_management.Task.Management.enums.Role;
@@ -28,8 +29,7 @@ public class TaskService {
     private final UserRepository userRepository;
     private final TaskRepository taskRepository;
     private final TaskMapper taskMapper;
-    private final JwtService jwtService;
-
+    private final TaskEventPublisher taskEventPublisher;
     public TaskDto createTask(RegisterTaskRequest request){
         Task task = new Task();
         var authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -47,7 +47,7 @@ public class TaskService {
         }
         task.setDueDate(request.getDueDate());
         var saved = taskRepository.save(task);
-
+        taskEventPublisher.send(new TaskUpdateEventDto("CREATED" , taskMapper.toDto(saved)));
         return taskMapper.toDto(saved);
     }
 
@@ -102,7 +102,7 @@ public class TaskService {
         }
         task.setDueDate(request.getDueDate());
         var saved = taskRepository.save(task);
-
+        taskEventPublisher.send(new TaskUpdateEventDto("UPDATED" , taskMapper.toDto(saved)));
         return taskMapper.toDto(saved);
 
     }
@@ -115,7 +115,9 @@ public class TaskService {
         if(task == null){
             throw new TaskNotFoundException("Task Not Found");
         }
+        var taskDto = taskMapper.toDto(task);
         taskRepository.delete(task);
+        taskEventPublisher.send(new TaskUpdateEventDto("DELETED" , taskDto));
     }
 
     private boolean isUserIsOwnerOrAdmin(Long taskId){
