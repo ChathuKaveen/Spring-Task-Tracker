@@ -10,6 +10,7 @@ import com.task_management.Task.Management.services.TaskService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -35,34 +36,53 @@ public class TaskController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdDate,desc") String sort,
             @RequestParam(required = false) TaskStatus status,
-            @RequestParam(required = false) LocalDate DueDate,
+            @RequestParam(required = false) LocalDate dueDate,
             @RequestParam(required = false) Long userId
     ){
-        var leavesPage = taskService.getAllTasks(page , size , sort , status ,DueDate , userId);
-        var data = leavesPage.stream().map(taskMapper::toDto).toList();
+        var taskPage = taskService.getAllTasks(page , size , sort , status ,dueDate , userId);
+        var data = taskPage.stream().map(taskMapper::toDto).toList();
         var response = new TaskPageResponse<>(
                 data,
-                leavesPage.getNumber(),
-                leavesPage.getSize(),
-                leavesPage.getTotalPages(),
-                leavesPage.getTotalElements()
+                taskPage.getNumber(),
+                taskPage.getSize(),
+                taskPage.getTotalPages(),
+                taskPage.getTotalElements()
         );
         return ResponseEntity.ok(response);
     }
 
     @GetMapping
-    public Iterable<TaskDto> getMyTasks(){
-        return taskService.getMyTasks();
+    public ResponseEntity<?> getMyTasks(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdDate,desc") String sort,
+            @RequestParam(required = false) TaskStatus status,
+            @RequestParam(required = false) LocalDate dueDate
+    ){
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        var userId =(Long) authentication.getPrincipal();
+        var myTasks = taskService.getMyTasks(page , size , sort , status ,dueDate , userId);
+        var data = myTasks.stream().map(taskMapper::toDto).toList();
+        var response = new TaskPageResponse<>(
+                data,
+                myTasks.getNumber(),
+                myTasks.getSize(),
+                myTasks.getTotalPages(),
+                myTasks.getTotalElements()
+        );
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<TaskDto> getLeaveById(@PathVariable(name = "id") Long id){
+    public ResponseEntity<TaskDto> getTaskById(@PathVariable(name = "id") Long id){
         return ResponseEntity.ok(taskService.getTaskById(id));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<?> updateTask(@RequestBody UpdateTaskRequest request , @PathVariable(name = "id") Long id){
-        return ResponseEntity.ok(taskService.updateTask(request , id));
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        var userId =(Long) authentication.getPrincipal();
+        return ResponseEntity.ok(taskService.updateTask(request , id , userId));
     }
 
     @DeleteMapping("/{id}")

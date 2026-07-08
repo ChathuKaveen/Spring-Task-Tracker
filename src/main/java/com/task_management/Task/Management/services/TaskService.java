@@ -4,7 +4,9 @@ import com.task_management.Task.Management.dtos.RegisterTaskRequest;
 import com.task_management.Task.Management.dtos.TaskDto;
 import com.task_management.Task.Management.dtos.UpdateTaskRequest;
 import com.task_management.Task.Management.entities.Task;
+import com.task_management.Task.Management.enums.Role;
 import com.task_management.Task.Management.enums.TaskStatus;
+import com.task_management.Task.Management.exceptions.NotEnoughPrevilagesException;
 import com.task_management.Task.Management.exceptions.TaskDueDayCantBeforeTodayException;
 import com.task_management.Task.Management.exceptions.TaskNotFoundException;
 import com.task_management.Task.Management.exceptions.UserNotFound;
@@ -29,6 +31,7 @@ public class TaskService {
     private final UserRepository userRepository;
     private final TaskRepository taskRepository;
     private final TaskMapper taskMapper;
+    private final JwtService jwtService;
 
     public TaskDto createTask(RegisterTaskRequest request){
         Task task = new Task();
@@ -45,7 +48,7 @@ public class TaskService {
         if(request.getDueDate().isBefore(LocalDate.now())){
             throw new TaskDueDayCantBeforeTodayException("Due-Date must not be older date");
         }
-        task.setDueDate(request.getDueDate().atStartOfDay());
+        task.setDueDate(request.getDueDate());
         var saved = taskRepository.save(task);
 
         return taskMapper.toDto(saved);
@@ -64,10 +67,17 @@ public class TaskService {
         return taskList;
     }
 
-    public Iterable<TaskDto> getMyTasks(){
-        var authentication = SecurityContextHolder.getContext().getAuthentication();
-        var userId =(Long) authentication.getPrincipal();
-        return taskRepository.findByOwnerId(userId).stream().map(taskMapper::toDto).toList();
+    public Page<Task> getMyTasks(
+            int page,
+            int size,
+            String sort,
+            TaskStatus status,
+            LocalDate DueDate,
+            Long userId
+    ){
+        PageRequest pageRequest = PageRequest.of(page , size);
+        Page<Task> tasks = taskRepository.findMyTasksWithFilter(status , DueDate , pageRequest , userId);
+        return tasks;
     }
 
     public TaskDto getTaskById(Long id){
@@ -78,10 +88,13 @@ public class TaskService {
         return taskMapper.toDto(task);
     }
 
-    public TaskDto updateTask(UpdateTaskRequest request , Long id){
+    public TaskDto updateTask(UpdateTaskRequest request , Long id , Long userId){
         var task = taskRepository.findById(id).orElse(null);
         if(task == null){
             throw new TaskNotFoundException("Task Not Found");
+        }
+        if(!isUserIsOwnerOrAdmin(id)){
+            throw new NotEnoughPrevilagesException("You Don't Have Enough Privileges");
         }
 
         task.setDescription(request.getDescription());
@@ -90,7 +103,7 @@ public class TaskService {
         if(request.getDueDate().isBefore(LocalDate.now())){
             throw new TaskDueDayCantBeforeTodayException("Due-Date must not be older date");
         }
-        task.setDueDate(request.getDueDate().atStartOfDay());
+        task.setDueDate(request.getDueDate());
         var saved = taskRepository.save(task);
 
         return taskMapper.toDto(saved);
@@ -99,9 +112,22 @@ public class TaskService {
 
     public void deleteTask(Long id){
         var task = taskRepository.findById(id).orElse(null);
+        if(!isUserIsOwnerOrAdmin(id)){
+            throw new NotEnoughPrevilagesException("You Don't Have Enough Privileges");
+        }
         if(task == null){
             throw new TaskNotFoundException("Task Not Found");
         }
         taskRepository.delete(task);
+    }
+
+    private boolean isUserIsOwnerOrAdmin(Long taskId){
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        var userId =(Long) authentication.getPrincipal();
+        String role = authentication.getAuthorities().iterator().next().getAuthority();
+        if(Role.ADMIN.name().equals(role.replace("ROLE_", ""))) {
+            return true;
+        }
+            return taskRepository.findIfOwner(userId , taskId);
     }
 }

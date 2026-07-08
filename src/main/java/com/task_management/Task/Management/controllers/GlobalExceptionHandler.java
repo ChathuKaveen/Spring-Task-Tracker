@@ -1,10 +1,7 @@
 package com.task_management.Task.Management.controllers;
 
 import com.task_management.Task.Management.dtos.ErrorResponseDto;
-import com.task_management.Task.Management.exceptions.TaskDueDayCantBeforeTodayException;
-import com.task_management.Task.Management.exceptions.TaskNotFoundException;
-import com.task_management.Task.Management.exceptions.UserAlreadyExisist;
-import com.task_management.Task.Management.exceptions.UserNotFound;
+import com.task_management.Task.Management.exceptions.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -35,6 +32,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(TaskNotFoundException.class)
     public ResponseEntity<ErrorResponseDto> TaskNotFoundExceptionHandler(TaskNotFoundException ex){
         ErrorResponseDto error = new ErrorResponseDto(HttpStatus.NOT_FOUND.value() , ex.getMessage());
+        return ResponseEntity.badRequest().body(error);
+    }
+
+    @ExceptionHandler(NotEnoughPrevilagesException.class)
+    public ResponseEntity<ErrorResponseDto> TaskNotFoundExceptionHandler(NotEnoughPrevilagesException ex){
+        ErrorResponseDto error = new ErrorResponseDto(HttpStatus.FORBIDDEN.value() , ex.getMessage());
         return ResponseEntity.badRequest().body(error);
     }
 
